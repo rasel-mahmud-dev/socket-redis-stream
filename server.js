@@ -36,8 +36,8 @@ io.on("connection", async (socket) => {
 
     // grab old all room messages and send back to joined user
     let client = await getClient()
-    let [messages]  = (await client.hmGet("messages", "roomID"))
-    socket.emit("history-message", messages)
+    // let [messages]  = (await client.hmGet("messages", "roomID"))
+    // socket.emit("history-message", messages)
 
     // upon disconnection
     socket.on("disconnect", (reason) => {
@@ -46,10 +46,19 @@ io.on("connection", async (socket) => {
 
 
     socket.on("message", async function (message) {
-        let [oldRoomMessage] = await client.hmGet("messages", message.roomId)
-        let messages = JSON.parse(oldRoomMessage || "") || []
-        messages.push(message)
-        await client.hSet("messages", message.roomId, JSON.stringify(messages))
+        // let [oldRoomMessage] = await client.hmGet("messages", message.roomId)
+        // let messages = JSON.parse(oldRoomMessage || "") || []
+        // messages.push(message)
+        // await client.hSet("messages", message.roomId, JSON.stringify(messages))
+
+        let msgPayload = {
+            ...message,
+            createdAt: new Date().toISOString()
+        }
+
+        let result = await addChatMessage(message.roomId, msgPayload, client)
+        console.log(result)
+
         socket.nsp.to(message.roomId).emit("receive-msg", message)
     })
 })
@@ -61,17 +70,14 @@ Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
     server.listen(4000, () => console.log("server is running on port 4000"))
 });
 
-// function addChatMessage(chatGroupId, message, client) {
-//     const messageFields = {
-//         message,
-//         timestamp: Date.now().toString()
-//     };
-//
-//     client.xadd(chatGroupId, '*', messageFields, (err, messageId) => {
-//         if (err) {
-//             console.error(err);
-//         } else {
-//             console.log('Chat message added to stream with ID:', messageId);
-//         }
-//     });
-// }
+function addChatMessage(chatGroupId, message, client) {
+    return new Promise(async (resolve)=>{
+        try{
+            let result = await client.XADD(chatGroupId, '*', message);
+            resolve(true)
+        } catch (ex){
+            resolve(false)
+        }
+    })
+}
+

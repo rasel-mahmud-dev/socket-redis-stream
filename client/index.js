@@ -46,7 +46,7 @@ window.addEventListener("DOMContentLoaded", function () {
         let name = loginForm.name.value
         if (name) {
             joinUser.name = name
-            joinUser.id = Math.floor(Math.random() * 1000)
+            joinUser.id = Math.floor(Math.random() * 100000).toString()
             loginForm.style.display = "none"
             sendMessageBtn.style.display = "block"
             userName.innerHTML = `
